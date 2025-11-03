@@ -1,0 +1,2323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <!-- 最后更新: 2025-10-30 12:50 -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>社保管理系统 - 首页看板</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 8px;
+        }
+
+        /* 顶部导航 */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 13px;
+        }
+
+        .refresh-time {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+
+        /* 社保日历区域 */
+        .calendar-section {
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 8px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .calendar-nav {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .calendar-nav button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .calendar-nav button:hover {
+            background: #5a6fd8;
+        }
+
+        .calendar-month {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .calendar-grid {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 8px 0;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 8px;
+        }
+
+        .calendar-day-header {
+            background: #f8f9fa;
+            padding: 8px 6px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .calendar-day {
+            background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+            padding: 8px 6px;
+            min-width: 110px;
+            min-height: 65px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .calendar-day:hover {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+            border-color: #3b82f6;
+        }
+
+        .calendar-day.other-month {
+            background: #111827;
+            color: #6b7280;
+        }
+
+        .calendar-day.today {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            border-color: #1e40af;
+        }
+
+        .calendar-day.today .day-number,
+        .calendar-day.today .day-name,
+        .calendar-day.today .day-date {
+            color: white;
+        }
+
+        .day-number {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: #1e293b;
+        }
+
+        .day-name {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 6px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .day-date {
+            font-size: 10px;
+            color: #94a3b8;
+            margin-bottom: 8px;
+            font-weight: 400;
+        }
+
+        .day-events {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .event-dots {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2px;
+            margin-top: 2px;
+        }
+
+        .event-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .event-dot:hover {
+            transform: scale(1.3);
+        }
+
+        /* 事件优先级颜色 - 从浅到深表示紧急程度 */
+        .event-dot.priority-low { background-color: #93c5fd; }
+        .event-dot.priority-medium { background-color: #3b82f6; }
+        .event-dot.priority-high { background-color: #1d4ed8; }
+        .event-dot.priority-urgent { background-color: #dc2626; }
+
+        /* 事件类型颜色 */
+        .event-dot.type-close { background-color: #ef4444; }
+        .event-dot.type-adjust { background-color: #f59e0b; }
+        .event-dot.type-payment { background-color: #10b981; }
+        .event-dot.type-report { background-color: #3b82f6; }
+        .event-dot.type-audit { background-color: #8b5cf6; }
+
+        .event-close { background: #e74c3c; }
+        .event-adjust { background: #f39c12; }
+        .event-payment { background: #27ae60; }
+        .event-report { background: #3498db; }
+        .event-audit { background: #9b59b6; }
+
+        /* 工具提示样式 */
+        .tooltip {
+            position: absolute;
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1.4;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border: 1px solid #374151;
+            max-width: 280px;
+            min-width: 200px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .tooltip.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 8px solid #1f2937;
+        }
+
+        .tooltip .event-title {
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #f9fafb;
+        }
+
+        .tooltip .event-priority {
+            font-size: 11px;
+            margin-bottom: 4px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .tooltip .event-priority.urgent {
+            background: #dc2626;
+            color: white;
+        }
+
+        .tooltip .event-priority.high {
+            background: #ea580c;
+            color: white;
+        }
+
+        .tooltip .event-priority.medium {
+            background: #ca8a04;
+            color: white;
+        }
+
+        .tooltip .event-priority.low {
+            background: #16a34a;
+            color: white;
+        }
+
+        .tooltip .event-description {
+            color: #d1d5db;
+            font-size: 12px;
+            margin-top: 6px;
+        }
+
+        /* 日期悬停详情框 */
+        .date-hover-details {
+            position: absolute;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            z-index: 1001;
+            min-width: 300px;
+            max-width: 400px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        .date-hover-details.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .date-hover-details .date-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+
+        .date-hover-details .event-item {
+            margin-bottom: 12px;
+            padding: 10px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .date-hover-details .event-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .date-hover-details .event-item .event-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .date-hover-details .event-item .event-priority {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 6px;
+        }
+
+        .date-hover-details .event-item .event-description {
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        .date-hover-details .no-events {
+            color: #94a3b8;
+            font-style: italic;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .calendar-legend {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        /* KPI卡片区域 */
+        /* 指标卡片区域样式 */
+        .indicators-section {
+            margin-bottom: 15px;
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            padding-left: 8px;
+            border-left: 3px solid #3498db;
+        }
+
+        .indicators-section .section-title {
+            margin-bottom: 8px;
+        }
+
+        .chart-section .section-title,
+        .todo-section .section-title {
+            margin-bottom: 8px;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-select:hover, .filter-select:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        .date-picker-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .date-picker {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+            min-width: 150px;
+        }
+
+        .date-picker:hover, .date-picker:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        .date-label {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+            font-size: 14px;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .date-picker:focus + .date-label,
+        .date-picker:not(:placeholder-shown) + .date-label,
+        .date-picker[value]:not([value=""]) + .date-label {
+            top: -8px;
+            left: 8px;
+            font-size: 12px;
+            color: #3498db;
+            background: white;
+            padding: 0 4px;
+        }
+
+        .indicator-group {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #fafbfc;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .indicator-group-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .hover-hint {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 8px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .kpi-card.hover-drill-down:hover .hover-hint {
+            opacity: 1;
+        }
+
+        .kpi-card.hover-drill-down:hover {
+            border-left: 4px solid #e74c3c;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .status-indicator.normal {
+            background-color: #27ae60;
+        }
+
+        .status-indicator.warning {
+            background-color: #f39c12;
+        }
+
+        .status-indicator.error {
+            background-color: #e74c3c;
+        }
+
+        .kpi-sub-text {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        /* 原有KPI网格样式 */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 6px 8px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .kpi-label {
+            color: #666;
+            font-size: 10px;
+            margin-bottom: 3px;
+            line-height: 1.1;
+        }
+
+        .kpi-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 2px;
+            line-height: 1;
+        }
+
+        .kpi-trend {
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .trend-up { color: #27ae60; }
+        .trend-down { color: #e74c3c; }
+        .trend-stable { color: #95a5a6; }
+
+        /* 水平排列的指标卡网格 */
+        .kpi-grid-horizontal {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        /* 缩小的指标卡样式覆盖 */
+        .kpi-grid-horizontal .kpi-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            min-height: 90px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            z-index: 1;
+        }
+
+        .kpi-grid-horizontal .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-color: #3498db;
+            z-index: 1000000;
+        }
+
+        .kpi-grid-horizontal .kpi-label {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 4px;
+            font-weight: 500;
+            line-height: 1.2;
+        }
+
+        .kpi-grid-horizontal .kpi-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .kpi-grid-horizontal .kpi-trend {
+            font-size: 10px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+
+        .kpi-grid-horizontal .hover-hint {
+            position: absolute;
+            bottom: 2px;
+            right: 4px;
+            font-size: 8px;
+            color: #95a5a6;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .kpi-grid-horizontal .kpi-card:hover .hover-hint {
+            opacity: 1;
+        }
+
+        /* 悬浮提示框样式 */
+        .hover-tooltip {
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            z-index: 99999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            min-width: 200px;
+            max-width: 280px;
+            border: 1px solid rgba(255,255,255,0.1);
+            pointer-events: none;
+        }
+
+        .hover-tooltip::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 6px solid #2c3e50;
+        }
+
+        .kpi-card:hover .hover-tooltip {
+            opacity: 1;
+            visibility: visible;
+            top: calc(100% + 8px);
+            z-index: 999999;
+        }
+
+        .tooltip-title {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #ecf0f1;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 4px;
+        }
+
+        .tooltip-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+            font-size: 10px;
+        }
+
+        .tooltip-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .tooltip-label {
+            color: #bdc3c7;
+            flex: 1;
+        }
+
+        .tooltip-value {
+            color: #ecf0f1;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+
+        .tooltip-value.status-normal {
+            color: #2ecc71;
+        }
+
+        .tooltip-value.trend-up {
+            color: #e74c3c;
+        }
+
+        .tooltip-value.trend-stable {
+            color: #f39c12;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .kpi-grid-horizontal {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 10px;
+            }
+            
+            .kpi-grid-horizontal .kpi-card {
+                padding: 10px;
+                min-height: 80px;
+            }
+            
+            .kpi-grid-horizontal .kpi-value {
+                font-size: 16px;
+            }
+            
+            .kpi-grid-horizontal .kpi-label {
+                font-size: 10px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .kpi-grid-horizontal {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 8px;
+            }
+            
+            .kpi-grid-horizontal .kpi-card {
+                padding: 8px;
+                min-height: 70px;
+            }
+            
+            .kpi-grid-horizontal .kpi-value {
+                font-size: 14px;
+            }
+            
+            .kpi-grid-horizontal .kpi-label {
+                font-size: 9px;
+            }
+        }
+
+        /* 流程进度区域 */
+        .progress-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        /* 工作流步骤水平布局 */
+        .workflow-steps {
+            display: flex;
+            flex-direction: row;
+            gap: 12px;
+            margin-top: 15px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            align-items: stretch;
+            justify-content: space-between;
+        }
+
+        .workflow-step {
+            flex: 1;
+            min-width: 240px;
+            max-width: 280px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .workflow-step:hover {
+            border-color: #3498db;
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border-radius: 8px 8px 0 0;
+            margin-bottom: 10px;
+        }
+
+        .step-number {
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            margin-right: 8px;
+        }
+
+        .step-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .step-content {
+            padding: 0 12px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        /* 工作流步骤中的进度项样式 */
+        .workflow-step .progress-item {
+            background: white;
+            padding: 8px 10px;
+            border-radius: 6px;
+            text-align: left;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid #e9ecef;
+            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .workflow-step .progress-item:hover {
+            background: #f8f9fa;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-color: #3498db;
+        }
+
+        .workflow-step .progress-item.hover-drill-down:hover {
+            border-color: #e74c3c;
+            background: #fef9f9;
+        }
+
+        .workflow-step .progress-name {
+            font-size: 12px;
+            color: #2c3e50;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .workflow-step .progress-count {
+            font-size: 16px;
+            font-weight: 700;
+            color: #3498db;
+            margin: 0 8px;
+        }
+
+        .workflow-step .progress-trend {
+            font-size: 10px;
+            min-width: 45px;
+            text-align: right;
+        }
+
+        /* 保留原有的进度网格样式用于其他部分 */
+        .progress-category {
+            margin-bottom: 12px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 3px solid #3498db;
+        }
+
+        .progress-category-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .progress-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+        }
+
+        .progress-item {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid #e9ecef;
+            position: relative;
+        }
+
+        .progress-item:hover {
+            background: #f1f3f4;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .progress-item.hover-drill-down:hover {
+            border-color: #e74c3c;
+        }
+
+        .progress-name {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 6px;
+        }
+
+        .progress-count {
+            font-size: 16px;
+            font-weight: 700;
+            color: #3498db;
+            margin-bottom: 3px;
+        }
+
+        .progress-trend {
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+        }
+
+
+
+        /* 三列布局：指标卡、管理方人员分布、待办与异常提醒 */
+        .indicators-main-grid {
+            display: grid;
+            grid-template-columns: 1.8fr 1.1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        /* 主要内容区域 */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .chart-section, .todo-section {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .chart-container {
+            height: 280px;
+            margin-top: 8px;
+        }
+
+        /* 待办事项列表 */
+        .todo-list {
+            margin-top: 12px;
+        }
+
+        .todo-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .todo-item:hover {
+            background-color: #f8f9fa;
+            margin: 0 -6px;
+            padding: 6px;
+            border-radius: 6px;
+        }
+
+        .todo-item:last-child {
+            border-bottom: none;
+        }
+
+        .todo-title {
+            font-size: 13px;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .todo-meta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: #666;
+        }
+
+        .priority-badge {
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 9px;
+            font-weight: 600;
+        }
+
+        .priority-high { background: #fee; color: #e74c3c; }
+        .priority-medium { background: #fff3cd; color: #f39c12; }
+        .priority-low { background: #d4edda; color: #27ae60; }
+
+        /* 快捷操作区域 */
+        .actions-section {
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 16px;
+        }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            text-align: center;
+            display: block;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(116, 185, 255, 0.4);
+        }
+
+        /* 底部信息 */
+        .footer {
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            margin-top: 16px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            /* 新增：三列布局在小屏幕上垂直排列 */
+            .indicators-main-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .progress-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            /* 工作流步骤响应式样式 - 只在小屏幕时切换为纵向 */
+            .workflow-steps {
+                flex-direction: column;
+                gap: 15px;
+                overflow-x: visible;
+            }
+
+            .workflow-step {
+                min-width: unset;
+                max-width: unset;
+            }
+
+            .step-header {
+                padding: 12px;
+            }
+
+            .step-number {
+                width: 25px;
+                height: 25px;
+                font-size: 14px;
+                margin-right: 10px;
+            }
+
+            .step-title {
+                font-size: 14px;
+            }
+
+            .workflow-step .progress-item {
+                padding: 10px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+
+            .workflow-step .progress-name {
+                font-size: 12px;
+            }
+
+            .workflow-step .progress-count {
+                font-size: 16px;
+                margin: 0;
+            }
+
+            .workflow-step .progress-trend {
+                font-size: 10px;
+                min-width: unset;
+                text-align: left;
+            }
+
+            .actions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部导航 -->
+        <header class="header">
+            <div class="header-content">
+                <h1>🏢 社保管理系统 · 首页看板</h1>
+                <div class="header-info">
+                    <div class="refresh-time">
+                        📊 最近刷新：<span id="refreshTime">2024-01-15 14:30:25</span>
+                    </div>
+                    <div>👤 张经理 | 🏙️ 北京分公司</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 社保日历 -->
+        <section class="calendar-section">
+            <h2 class="section-title">📅 未来十天重要事项</h2>
+            
+            <div class="calendar-grid" id="calendarGrid">
+                <!-- 未来十天日历将在这里动态生成 -->
+            </div>
+            
+            <div class="calendar-legend">
+                <div class="legend-item">
+                    <div class="legend-dot event-close"></div>
+                    <span>关账日</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot event-adjust"></div>
+                    <span>调基时间</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot event-payment"></div>
+                    <span>缴费节点</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot event-report"></div>
+                    <span>申报截止</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot event-audit"></div>
+                    <span>审核节点</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 指标卡与右侧内容的组合布局 -->
+        <div class="indicators-main-grid">
+            <!-- 左侧：指标卡片区域 -->
+            <section class="indicators-section">
+                <h2 class="section-title">📊 指标卡（支持按照提报方、处理时间、派单方式筛选）</h2>
+            
+            <!-- 筛选器 -->
+            <div class="filter-bar">
+                <select class="filter-select" id="reporterFilter">
+                    <option value="">提报方</option>
+                    <option value="fesco">FESCO</option>
+                    <option value="jucheng">聚成</option>
+                    <option value="bangmang">邦芒</option>
+                    <option value="guangdong">广东民企</option>
+                    <option value="maxin">马鑫</option>
+                    <option value="tianjin">天津HRSSC</option>
+                    <option value="huaxinan">华欣安</option>
+                    <option value="yayiminghao">亚一明昊</option>
+                    <option value="qiancheng">前程</option>
+                    <option value="lianchao">联朝</option>
+                </select>
+                <div class="date-picker-container">
+                    <input type="date" class="filter-select date-picker" id="timeFilter" placeholder="选择处理时间">
+                    <label for="timeFilter" class="date-label">📅 处理时间</label>
+                </div>
+                <select class="filter-select" id="dispatchFilter">
+                    <option value="">派单类型</option>
+                    <option value="manual">人工</option>
+                    <option value="auto">系统自动</option>
+                </select>
+            </div>
+
+            <!-- 所有指标卡统一水平排列 -->
+            <div class="kpi-grid-horizontal">
+                <div class="kpi-card" onclick="navigateTo('/employee-info-query')" title="点击跳转至员工缴纳信息查询">
+                    <div class="kpi-label">参保总人数</div>
+                    <div class="kpi-value">149,396</div>
+                    <div class="kpi-trend trend-up">↗️ +2.3%</div>
+                </div>
+                <div class="kpi-card hover-drill-down" data-hover="account-details" onclick="navigateTo('/account-details')">
+                    <div class="kpi-label">账户总数量</div>
+                    <div class="kpi-value">1,317</div>
+                    <div class="kpi-trend trend-up">↗️ +1.8%</div>
+                    <div class="hover-hint">🔍 悬浮查看详情</div>
+                    <div class="hover-tooltip" id="account-tooltip">
+                        <div class="tooltip-title">账户详细信息</div>
+                        <div class="tooltip-item">
+                            <span class="tooltip-label">账户总数量:</span>
+                            <span class="tooltip-value">1,317个</span>
+                        </div>
+                        <div class="tooltip-item">
+                            <span class="tooltip-label">账户状态:</span>
+                            <span class="tooltip-value status-normal">正常</span>
+                        </div>
+                        <div class="tooltip-item">
+                            <span class="tooltip-label">异常账户:</span>
+                            <span class="tooltip-value">0个</span>
+                        </div>
+                        <div class="tooltip-item">
+                            <span class="tooltip-label">月增长率:</span>
+                            <span class="tooltip-value trend-up">+1.8%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="kpi-card hover-drill-down" data-hover="rule-details" onclick="navigateTo('/rule-details')">
+                    <div class="kpi-label">规则数量</div>
+                    <div class="kpi-value">156</div>
+                    <div class="kpi-trend trend-stable">➡️ +0.6%</div>
+                    <div class="hover-hint">🔍 悬浮查看详情</div>
+                    <div class="hover-tooltip" id="rule-tooltip">
+                        <div class="tooltip-title">规则详细信息</div>
+                        <div class="tooltip-item">
+                            <span class="tooltip-label">规则数量:</span>
+                            <span class="tooltip-value">156个</span>
+                        </div>
+                        <div class="tooltip-item">
+                            <span class="tooltip-label">规则状态:</span>
+                            <span class="tooltip-value status-normal">正常</span>
+                        </div>
+                        <div class="tooltip-item">
+                            <span class="tooltip-label">异常规则:</span>
+                            <span class="tooltip-value">0个</span>
+                        </div>
+                        <div class="tooltip-item">
+                            <span class="tooltip-label">月增长率:</span>
+                            <span class="tooltip-value trend-stable">+0.6%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">规则更新周期</div>
+                    <div class="kpi-value">15.3<span style="font-size: 12px;">天</span></div>
+                    <div class="kpi-trend trend-down">↘️ -2.1天</div>
+                </div>
+                <div class="kpi-card hover-drill-down" data-hover="addition-details" onclick="navigateTo('/addition-details')">
+                    <div class="kpi-label">当月增员</div>
+                    <div class="kpi-value">3,606</div>
+                    <div class="kpi-trend trend-down">↘️ -5.2%</div>
+                    <div class="hover-hint">🔍 悬浮查看详情</div>
+                    <div class="hover-tooltip" id="addition-tooltip">
+                        <div class="tooltip-title">当月增员细分</div>
+                        <div class="tooltip-item">
+                            <span class="tooltip-label">系统入职增员数:</span>
+                            <span class="tooltip-value">1,856人</span>
+                        </div>
+                        <div class="tooltip-item">
+                            <span class="tooltip-label">人工入职增员数:</span>
+                            <span class="tooltip-value">892人</span>
+                        </div>
+                        <div class="tooltip-item">
+                            <span class="tooltip-label">系统调转增员数:</span>
+                            <span class="tooltip-value">534人</span>
+                        </div>
+                        <div class="tooltip-item">
+                            <span class="tooltip-label">人工调转增员数:</span>
+                            <span class="tooltip-value">198人</span>
+                        </div>
+                        <div class="tooltip-item">
+                            <span class="tooltip-label">补缴增员数:</span>
+                            <span class="tooltip-value">126人</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="kpi-card hover-drill-down" data-hover="reduction-details" onclick="navigateTo('/reduction-details')">
+                    <div class="kpi-label">当月减员</div>
+                    <div class="kpi-value">6,126</div>
+                    <div class="kpi-trend trend-up">↗️ +12.4%</div>
+                    <div class="hover-hint">🔍 悬浮查看详情</div>
+                    <div class="hover-tooltip" id="reduction-tooltip">
+                        <div class="tooltip-title">当月减员细分</div>
+                        <div class="tooltip-item">
+                            <span class="tooltip-label">系统离职减员数:</span>
+                            <span class="tooltip-value">3,245人</span>
+                        </div>
+                        <div class="tooltip-item">
+                            <span class="tooltip-label">人工离职减员数:</span>
+                            <span class="tooltip-value">1,892人</span>
+                        </div>
+                        <div class="tooltip-item">
+                            <span class="tooltip-label">系统调转减员数:</span>
+                            <span class="tooltip-value">678人</span>
+                        </div>
+                        <div class="tooltip-item">
+                            <span class="tooltip-label">人工调转减员数:</span>
+                            <span class="tooltip-value">311人</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">人工处理率</div>
+                    <div class="kpi-value">23.5<span style="font-size: 12px;">%</span></div>
+                    <div class="kpi-trend trend-down">↘️ -3.2%</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">异常派单</div>
+                    <div class="kpi-value">39</div>
+                    <div class="kpi-trend trend-down">↘️ -15.6%</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">处理时长</div>
+                    <div class="kpi-value">4.2<span style="font-size: 12px;">h</span></div>
+                    <div class="kpi-trend trend-up">↗️ +0.3h</div>
+                </div>
+                <div class="kpi-card status-monitor" data-status="warning">
+                    <div class="kpi-label">异常参保率</div>
+                    <div class="kpi-value" style="color: #f39c12;">2.1<span style="font-size: 12px;">%</span></div>
+                    <div class="kpi-trend">
+                        <span class="status-indicator warning"></span>
+                        需关注
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">参保及时率</div>
+                    <div class="kpi-value">96.8<span style="font-size: 12px;">%</span></div>
+                    <div class="kpi-trend trend-up">↗️ +1.2%</div>
+                </div>
+            </div>
+        </section>
+
+            <!-- 中间内容区域 - 管理方人员分布 -->
+            <section class="chart-section">
+                <h2 class="section-title">📊 管理方人员分布</h2>
+                <div class="chart-container" id="distributionChart"></div>
+            </section>
+
+            <!-- 右侧内容区域 - 待办与异常提醒 -->
+            <section class="todo-section">
+                <h2 class="section-title">⚠️ 待办与异常提醒</h2>
+                <div class="todo-list">
+                        <div class="todo-item" onclick="navigateTo('/incident/1001')">
+                            <div class="todo-title">🔴 某科技公司缴费基数异常</div>
+                            <div class="todo-meta">
+                                <span class="priority-badge priority-high">高</span>
+                                <span>2小时前</span>
+                            </div>
+                        </div>
+                        <div class="todo-item" onclick="navigateTo('/incident/1002')">
+                            <div class="todo-title">🟡 批量减员数据校验失败</div>
+                            <div class="todo-meta">
+                                <span class="priority-badge priority-medium">中</span>
+                                <span>4小时前</span>
+                            </div>
+                        </div>
+                        <div class="todo-item" onclick="navigateTo('/incident/1003')">
+                            <div class="todo-title">🟢 月度报表生成完成</div>
+                            <div class="todo-meta">
+                                <span class="priority-badge priority-low">低</span>
+                                <span>1天前</span>
+                            </div>
+                        </div>
+                        <div class="todo-item" onclick="navigateTo('/incident/1004')">
+                            <div class="todo-title">🔴 系统接口调用超时</div>
+                            <div class="todo-meta">
+                                <span class="priority-badge priority-high">高</span>
+                                <span>30分钟前</span>
+                            </div>
+                        </div>
+                        <div class="todo-item" onclick="navigateTo('/incident/1005')">
+                            <div class="todo-title">🟡 企业信息变更待审核</div>
+                            <div class="todo-meta">
+                                <span class="priority-badge priority-medium">中</span>
+                                <span>6小时前</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+        </div>
+
+        <!-- 流程进度监控 -->
+        <section class="progress-section">
+            <h2 class="section-title">📋 流程进度监控（支持按照提报方、处理时间、派单方式筛选）</h2>
+            
+            <!-- 筛选器 -->
+            <div class="filter-bar">
+                <select class="filter-select" id="progressReporterFilter">
+                    <option value="">提报方</option>
+                    <option value="fesco">FESCO</option>
+                    <option value="jucheng">聚成</option>
+                    <option value="bangmang">邦芒</option>
+                    <option value="guangdong">广东民企</option>
+                    <option value="maxin">马鑫</option>
+                    <option value="tianjin">天津HRSSC</option>
+                    <option value="huaxinan">华欣安</option>
+                    <option value="yayiminghao">亚一明昊</option>
+                    <option value="qiancheng">前程</option>
+                    <option value="lianchao">联朝</option>
+                </select>
+                <div class="date-picker-container">
+                    <input type="date" class="filter-select date-picker" id="progressTimeFilter" placeholder="选择处理时间">
+                    <label for="progressTimeFilter" class="date-label">📅 处理时间</label>
+                </div>
+                <select class="filter-select" id="progressDispatchFilter">
+                    <option value="">派单类型</option>
+                    <option value="manual">人工</option>
+                    <option value="auto">系统自动</option>
+                </select>
+            </div>
+
+            <!-- 四步骤水平布局 -->
+            <div class="workflow-steps">
+                <!-- 步骤1: 政策/账户/规则 -->
+                <div class="workflow-step">
+                    <div class="step-header">
+                        <div class="step-number">1</div>
+                        <h3 class="step-title">⚙️ 政策/账户/规则</h3>
+                    </div>
+                    <div class="step-content">
+                        <div class="progress-item hover-drill-down" data-hover="policy-details" onclick="navigateTo('/policy/pending')">
+                            <div class="progress-name">政策待更新</div>
+                            <div class="progress-count">5</div>
+                            <div class="progress-trend trend-up">↗️ +2</div>
+                            <div class="hover-hint">🔍 悬浮查看详情</div>
+                        </div>
+                        <div class="progress-item" onclick="navigateTo('/account/pending')">
+                            <div class="progress-name">账户待处理</div>
+                            <div class="progress-count">12</div>
+                            <div class="progress-trend trend-stable">➡️ 0</div>
+                        </div>
+                        <div class="progress-item" onclick="navigateTo('/rule/pending')">
+                            <div class="progress-name">规则待审核</div>
+                            <div class="progress-count">8</div>
+                            <div class="progress-trend trend-down">↘️ -3</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 步骤2: 派单 -->
+                <div class="workflow-step">
+                    <div class="step-header">
+                        <div class="step-number">2</div>
+                        <h3 class="step-title">📋 派单</h3>
+                    </div>
+                    <div class="step-content">
+                        <div class="progress-item hover-drill-down" data-hover="dispatch-addition-details" onclick="navigateTo('/dispatch/addition-pending')">
+                            <div class="progress-name">系统增员待人工处理</div>
+                            <div class="progress-count">23</div>
+                            <div class="progress-trend trend-up">↗️ +5</div>
+                            <div class="hover-hint">🔍 悬浮查看详情</div>
+                        </div>
+                        <div class="progress-item hover-drill-down" data-hover="dispatch-reduction-details" onclick="navigateTo('/dispatch/reduction-pending')">
+                            <div class="progress-name">系统减员待人工处理</div>
+                            <div class="progress-count">18</div>
+                            <div class="progress-trend trend-down">↘️ -2</div>
+                            <div class="hover-hint">🔍 悬浮查看详情</div>
+                        </div>
+                        <div class="progress-item" onclick="navigateTo('/dispatch/transfer-addition-pending')">
+                            <div class="progress-name">调转增员待人工处理</div>
+                            <div class="progress-count">7</div>
+                            <div class="progress-trend trend-stable">➡️ 0</div>
+                        </div>
+                        <div class="progress-item" onclick="navigateTo('/dispatch/transfer-reduction-pending')">
+                            <div class="progress-name">调转减员待人工处理</div>
+                            <div class="progress-count">4</div>
+                            <div class="progress-trend trend-down">↘️ -1</div>
+                        </div>
+                        <div class="progress-item" onclick="navigateTo('/dispatch/adjustment-pending')">
+                            <div class="progress-name">调基派单待人工处理</div>
+                            <div class="progress-count">15</div>
+                            <div class="progress-trend trend-up">↗️ +3</div>
+                        </div>
+                        <div class="progress-item" onclick="navigateTo('/dispatch/audit-pending')">
+                            <div class="progress-name">稽核待人工处理</div>
+                            <div class="progress-count">9</div>
+                            <div class="progress-trend trend-up">↗️ +2</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 步骤3: 订单 -->
+                <div class="workflow-step">
+                    <div class="step-header">
+                        <div class="step-number">3</div>
+                        <h3 class="step-title">📦 订单</h3>
+                    </div>
+                    <div class="step-content">
+                        <div class="progress-item hover-drill-down" data-hover="order-addition-details" onclick="navigateTo('/order/addition')">
+                            <div class="progress-name">增员订单</div>
+                            <div class="progress-count">156</div>
+                            <div class="progress-trend trend-up">↗️ +12</div>
+                            <div class="hover-hint">🔍 悬浮查看详情</div>
+                        </div>
+                        <div class="progress-item hover-drill-down" data-hover="order-reduction-details" onclick="navigateTo('/order/reduction')">
+                            <div class="progress-name">减员订单</div>
+                            <div class="progress-count">89</div>
+                            <div class="progress-trend trend-down">↘️ -5</div>
+                            <div class="hover-hint">🔍 悬浮查看详情</div>
+                        </div>
+                        <div class="progress-item" onclick="navigateTo('/order/adjustment')">
+                            <div class="progress-name">调整订单</div>
+                            <div class="progress-count">34</div>
+                            <div class="progress-trend trend-up">↗️ +8</div>
+                        </div>
+                        <div class="progress-item" onclick="navigateTo('/order/transfer')">
+                            <div class="progress-name">调转订单</div>
+                            <div class="progress-count">21</div>
+                            <div class="progress-trend trend-stable">➡️ 0</div>
+                        </div>
+                        <div class="progress-item" onclick="navigateTo('/order/audit')">
+                            <div class="progress-name">稽核订单</div>
+                            <div class="progress-count">12</div>
+                            <div class="progress-trend trend-up">↗️ +4</div>
+                        </div>
+                        <div class="progress-item" onclick="navigateTo('/order/base-adjustment')">
+                            <div class="progress-name">调基订单</div>
+                            <div class="progress-count">28</div>
+                            <div class="progress-trend trend-up">↗️ +6</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 步骤4: 质检 -->
+                <div class="workflow-step">
+                    <div class="step-header">
+                        <div class="step-number">4</div>
+                        <h3 class="step-title">🔍 质检</h3>
+                    </div>
+                    <div class="step-content">
+                        <div class="progress-item hover-drill-down" data-hover="quality-check-details" onclick="navigateTo('/employee/insurance-query')">
+                            <div class="progress-name">员工缴纳信息查询</div>
+                            <div class="progress-count">45</div>
+                            <div class="progress-trend trend-up">↗️ +8</div>
+                            <div class="hover-hint">🔍 点击进入查询页面</div>
+                        </div>
+                        <div class="progress-item" onclick="navigateTo('/quality/pending')">
+                            <div class="progress-name">待质检</div>
+                            <div class="progress-count">23</div>
+                            <div class="progress-trend trend-stable">➡️ +1</div>
+                        </div>
+                        <div class="progress-item" onclick="navigateTo('/quality/completed')">
+                            <div class="progress-name">质检完成</div>
+                            <div class="progress-count">178</div>
+                            <div class="progress-trend trend-up">↗️ +15</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- 快捷操作 -->
+        <section class="actions-section">
+            <h2 class="section-title">⚡ 快捷操作</h2>
+            <div class="actions-grid">
+                <a href="/ops/batch-add" class="action-btn">📝 批量报增</a>
+                <a href="/ops/batch-remove" class="action-btn">📝 批量减员</a>
+                <a href="/incidents" class="action-btn">🚨 异常处理中心</a>
+                <a href="/qa" class="action-btn">🔍 质检抽查</a>
+                <a href="/period/close" class="action-btn">📅 账期结转</a>
+                <a href="/reports/export" class="action-btn">📊 报表导出</a>
+                <a href="/import" class="action-btn">📤 数据导入</a>
+                <a href="/settings" class="action-btn">⚙️ 系统设置</a>
+            </div>
+        </section>
+
+        <!-- 底部信息 -->
+        <footer class="footer">
+            📋 数据口径说明与隐私合规见《数据字典》| 🔄 数据每5分钟自动刷新 | 🛠️ 如遇异常，请在异常处理中心提交工单
+        </footer>
+    </div>
+
+    <!-- 工具提示 -->
+    <div id="tooltip" class="tooltip"></div>
+    
+    <!-- 日期悬停详情框 -->
+    <div id="dateHoverDetails" class="date-hover-details"></div>
+
+    <script>
+        // 模拟数据刷新
+        function updateRefreshTime() {
+            const now = new Date();
+            const timeString = now.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('refreshTime').textContent = timeString;
+        }
+
+        // 导航函数
+        function navigateTo(path) {
+            console.log('导航到:', path);
+            alert(`模拟跳转到: ${path}`);
+        }
+
+
+
+        // 初始化分布图表
+        function initDistributionChart() {
+            const chartDom = document.getElementById('distributionChart');
+            const myChart = echarts.init(chartDom);
+            
+            // 提报方人员分布数据（与筛选器中的提报方一致）
+            const distributionData = [
+                { value: 123691, name: '天津HRSSC', itemStyle: { color: '#5470c6' } },
+                { value: 12249, name: 'FESCO', itemStyle: { color: '#91cc75' } },
+                { value: 8967, name: '聚成', itemStyle: { color: '#fac858' } },
+                { value: 6734, name: '邦芒', itemStyle: { color: '#ee6666' } },
+                { value: 5892, name: '广东民企', itemStyle: { color: '#73c0de' } },
+                { value: 4456, name: '马鑫', itemStyle: { color: '#3ba272' } },
+                { value: 3876, name: '华欣安', itemStyle: { color: '#fc8452' } },
+                { value: 2234, name: '亚一明昊', itemStyle: { color: '#9a60b4' } },
+                { value: 1678, name: '前程', itemStyle: { color: '#ea7ccc' } },
+                { value: 1056, name: '联朝', itemStyle: { color: '#5d7092' } }
+            ];
+
+            // 计算总数和百分比
+            const total = distributionData.reduce((sum, item) => sum + item.value, 0);
+            
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function(params) {
+                        const percent = ((params.value / total) * 100).toFixed(1);
+                        return `${params.seriesName}<br/>${params.name}: ${params.value.toLocaleString()}人 (${percent}%)`;
+                    }
+                },
+                legend: {
+                    orient: 'vertical',
+                    left: 'left',
+                    top: 'middle',
+                    textStyle: {
+                        fontSize: 11
+                    },
+                    formatter: function(name) {
+                        const item = distributionData.find(d => d.name === name);
+                        if (item) {
+                            const percent = ((item.value / total) * 100).toFixed(1);
+                            return `${name}: ${item.value.toLocaleString()}人 (${percent}%)`;
+                        }
+                        return name;
+                    }
+                },
+                series: [
+                    {
+                        name: '人员分布',
+                        type: 'pie',
+                        radius: ['45%', '75%'],
+                        center: ['65%', '50%'],
+                        avoidLabelOverlap: false,
+                        itemStyle: {
+                            borderRadius: 8,
+                            borderColor: '#fff',
+                            borderWidth: 2
+                        },
+                        label: {
+                            show: false
+                        },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: 14,
+                                fontWeight: 'bold',
+                                formatter: function(params) {
+                                    const percent = ((params.value / total) * 100).toFixed(1);
+                                    return `${params.name}\n${params.value.toLocaleString()}人\n${percent}%`;
+                                }
+                            }
+                        },
+                        labelLine: {
+                            show: false
+                        },
+                        data: distributionData
+                    }
+                ]
+            };
+
+            myChart.setOption(option);
+            
+            // 响应式
+            window.addEventListener('resize', function() {
+                myChart.resize();
+            });
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateRefreshTime();
+            initDistributionChart();
+            initCalendar();
+            
+            // 每30秒更新一次时间
+            setInterval(updateRefreshTime, 30000);
+        });
+
+        // 社保日历相关功能
+        let currentDate = new Date();
+        
+        // 社保重要日期数据 - 扩展更多真实数据
+        const socialSecurityEvents = {
+            '2024-01': [
+                { date: 3, type: 'report', title: '12月工资申报补录', priority: 'medium', description: '补录12月份工资变动信息' },
+                { date: 5, type: 'close', title: '12月关账截止', priority: 'high', description: '12月份账期必须完成关账操作' },
+                { date: 8, type: 'payment', title: '1月社保缴费', priority: 'urgent', description: '当月社保费用缴纳截止日期' },
+                { date: 10, type: 'audit', title: '年度稽核准备', priority: 'medium', description: '准备年度社保稽核相关材料' },
+                { date: 15, type: 'report', title: '1月申报截止', priority: 'high', description: '当月社保申报截止日期' },
+                { date: 18, type: 'adjust', title: '调基数据核对', priority: 'medium', description: '核对调整基数相关数据' },
+                { date: 20, type: 'audit', title: '内部审核节点', priority: 'low', description: '内部流程审核检查点' },
+                { date: 25, type: 'adjust', title: '调基开始执行', priority: 'high', description: '开始执行基数调整操作' },
+                { date: 28, type: 'report', title: '月度总结报告', priority: 'low', description: '提交月度工作总结报告' }
+            ],
+            '2024-02': [
+                { date: 2, type: 'report', title: '春节前数据备份', priority: 'medium', description: '节前完成重要数据备份' },
+                { date: 5, type: 'close', title: '1月关账截止', priority: 'high', description: '1月份账期关账截止' },
+                { date: 8, type: 'payment', title: '2月社保缴费', priority: 'urgent', description: '2月份社保费用缴纳' },
+                { date: 12, type: 'audit', title: '节前系统检查', priority: 'medium', description: '春节前系统安全检查' },
+                { date: 14, type: 'report', title: '春节前申报', priority: 'high', description: '节前最后申报截止' },
+                { date: 20, type: 'adjust', title: '节后调基恢复', priority: 'medium', description: '节后恢复调基操作' },
+                { date: 26, type: 'audit', title: '节后系统恢复', priority: 'low', description: '节后系统功能恢复检查' },
+                { date: 28, type: 'report', title: '2月补申报', priority: 'medium', description: '2月份补充申报截止' }
+            ],
+            '2024-03': [
+                { date: 1, type: 'report', title: '季度数据准备', priority: 'medium', description: '准备第一季度汇总数据' },
+                { date: 5, type: 'close', title: '2月关账截止', priority: 'high', description: '2月份账期关账截止' },
+                { date: 8, type: 'payment', title: '3月社保缴费', priority: 'urgent', description: '3月份社保费用缴纳' },
+                { date: 12, type: 'audit', title: '季度审核准备', priority: 'medium', description: '第一季度审核材料准备' },
+                { date: 15, type: 'report', title: '3月申报截止', priority: 'high', description: '3月份社保申报截止' },
+                { date: 18, type: 'adjust', title: '年度调基启动', priority: 'high', description: '启动年度基数调整工作' },
+                { date: 20, type: 'audit', title: '调基审核节点', priority: 'medium', description: '调基数据审核检查' },
+                { date: 25, type: 'adjust', title: '调基执行截止', priority: 'urgent', description: '年度调基执行截止日期' },
+                { date: 28, type: 'report', title: '季度报告提交', priority: 'high', description: '第一季度工作报告提交' },
+                { date: 31, type: 'audit', title: '季度总结审核', priority: 'low', description: '季度工作总结审核' }
+            ],
+            '2024-04': [
+                { date: 3, type: 'report', title: '调基结果确认', priority: 'medium', description: '确认年度调基执行结果' },
+                { date: 5, type: 'close', title: '3月关账截止', priority: 'high', description: '3月份账期关账截止' },
+                { date: 8, type: 'payment', title: '4月社保缴费', priority: 'urgent', description: '4月份社保费用缴纳' },
+                { date: 10, type: 'audit', title: '调基后审核', priority: 'medium', description: '调基完成后数据审核' },
+                { date: 15, type: 'report', title: '4月申报截止', priority: 'high', description: '4月份社保申报截止' },
+                { date: 20, type: 'adjust', title: '补缴基数调整', priority: 'medium', description: '处理补缴相关基数调整' },
+                { date: 25, type: 'audit', title: '月度质检', priority: 'low', description: '月度数据质量检查' },
+                { date: 30, type: 'report', title: '月度数据报送', priority: 'medium', description: '向上级部门报送月度数据' }
+            ]
+        };
+
+        // 初始化日历
+        function initCalendar() {
+            renderCalendar();
+        }
+
+        // 渲染未来十天日历
+        function renderCalendar() {
+            const calendarGrid = document.getElementById('calendarGrid');
+            calendarGrid.innerHTML = '';
+            
+            const today = new Date();
+            
+            // 生成未来10天的日期
+            for (let i = 0; i < 10; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() + i);
+                
+                const dayElement = createDayElement(date, i === 0);
+                calendarGrid.appendChild(dayElement);
+            }
+        }
+
+        // 创建日期元素（重新设计为未来十天格式）
+        function createDayElement(date, isToday) {
+            const dayElement = document.createElement('div');
+            dayElement.className = 'calendar-day';
+            
+            if (isToday) {
+                dayElement.classList.add('today');
+            }
+            
+            // 创建星期名称
+            const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+            const dayName = document.createElement('div');
+            dayName.className = 'day-name';
+            dayName.textContent = dayNames[date.getDay()];
+            dayElement.appendChild(dayName);
+            
+            // 创建日期数字
+            const dayNumber = document.createElement('div');
+            dayNumber.className = 'day-number';
+            dayNumber.textContent = date.getDate();
+            dayElement.appendChild(dayNumber);
+            
+            // 创建月日显示
+            const dayDate = document.createElement('div');
+            dayDate.className = 'day-date';
+            dayDate.textContent = `${date.getMonth() + 1}/${date.getDate()}`;
+            dayElement.appendChild(dayDate);
+            
+            // 添加事件
+            const events = getEventsForDate(date);
+            if (events.length > 0) {
+                const eventsContainer = document.createElement('div');
+                eventsContainer.className = 'event-dots';
+                
+                events.forEach(event => {
+                    const eventDot = document.createElement('div');
+                    eventDot.className = `event-dot type-${event.type} priority-${event.priority}`;
+                    eventDot.setAttribute('data-title', event.title);
+                    eventDot.setAttribute('data-description', event.description);
+                    eventDot.setAttribute('data-priority', event.priority);
+                    eventDot.setAttribute('data-type', event.type);
+                    
+                    // 添加鼠标悬停事件
+                    eventDot.addEventListener('mouseenter', (e) => showTooltip(e, event));
+                    eventDot.addEventListener('mouseleave', hideTooltip);
+                    
+                    eventsContainer.appendChild(eventDot);
+                });
+                
+                dayElement.appendChild(eventsContainer);
+            }
+            
+            // 添加鼠标悬停事件
+            dayElement.addEventListener('mouseenter', (e) => {
+                showDateDetails(e, date, events);
+            });
+            
+            dayElement.addEventListener('mouseleave', () => {
+                hideDateDetails();
+            });
+            
+            return dayElement;
+        }
+
+        // 未来十天的社保事件数据
+        const futureEvents = [
+            // 今天
+            { date: 0, type: 'urgent', title: '社保缴费截止', priority: 'urgent', description: '本月社保缴费今日截止，请及时处理' },
+            { date: 0, type: 'audit', title: '工伤认定审核', priority: 'high', description: '张三工伤认定材料需要审核' },
+            
+            // 明天
+            { date: 1, type: 'payment', title: '生育津贴发放', priority: 'medium', description: '李四生育津贴申请已通过，明日发放' },
+            
+            // 后天
+            { date: 2, type: 'close', title: '医保结算', priority: 'high', description: '本月医保费用结算处理' },
+            { date: 2, type: 'report', title: '月度报表提交', priority: 'medium', description: '向上级部门提交月度社保报表' },
+            
+            // 第4天
+            { date: 3, type: 'adjust', title: '缴费基数调整', priority: 'low', description: '王五缴费基数调整申请处理' },
+            
+            // 第5天
+            { date: 4, type: 'audit', title: '退休手续审批', priority: 'high', description: '赵六退休手续材料审批' },
+            { date: 4, type: 'payment', title: '失业金发放', priority: 'medium', description: '本期失业保险金发放处理' },
+            
+            // 第6天
+            { date: 5, type: 'close', title: '年检材料准备', priority: 'medium', description: '准备企业社保年检相关材料' },
+            
+            // 第7天
+            { date: 6, type: 'urgent', title: '系统维护', priority: 'urgent', description: '社保系统例行维护，暂停服务2小时' },
+            { date: 6, type: 'report', title: '异常数据核查', priority: 'high', description: '核查本周异常缴费数据' },
+            
+            // 第8天
+            { date: 7, type: 'adjust', title: '参保人员变更', priority: 'low', description: '处理本周参保人员增减变更' },
+            
+            // 第9天
+            { date: 8, type: 'payment', title: '医疗费用报销', priority: 'medium', description: '批量处理医疗费用报销申请' },
+            { date: 8, type: 'audit', title: '工伤复查', priority: 'high', description: '定期工伤复查和评估' },
+            
+            // 第10天
+            { date: 9, type: 'close', title: '月末结算', priority: 'high', description: '月末社保费用结算和对账' },
+            { date: 9, type: 'report', title: '数据统计', priority: 'low', description: '生成月度参保数据统计报告' }
+        ];
+
+        // 根据日期获取事件（新的函数，适配未来十天格式）
+        function getEventsForDate(date) {
+            const today = new Date();
+            const dayDiff = Math.floor((date - today) / (1000 * 60 * 60 * 24));
+            
+            return futureEvents.filter(event => event.date === dayDiff);
+        }
+
+        // 显示事件详情（更新为适配日期对象）
+        function showEventDetails(date, events) {
+            if (events.length === 0) {
+                alert(`${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日\n\n暂无重要事件`);
+                return;
+            }
+            
+            let details = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 重要事件：\n\n`;
+            events.forEach((event, index) => {
+                const priorityText = {
+                    'urgent': '🔴 紧急',
+                    'high': '🟠 高',
+                    'medium': '🟡 中',
+                    'low': '🟢 低'
+                };
+                details += `${index + 1}. ${event.title}\n`;
+                details += `   优先级：${priorityText[event.priority]}\n`;
+                details += `   详情：${event.description}\n\n`;
+            });
+            
+            alert(details);
+        }
+
+        // 工具提示相关变量
+        let tooltip = null;
+
+        // 显示工具提示
+        function showTooltip(e, event) {
+            // 移除现有的工具提示
+            hideTooltip();
+            
+            // 创建新的工具提示
+            tooltip = document.createElement('div');
+            tooltip.className = 'tooltip show';
+            
+            const priorityText = {
+                'urgent': '🔴 紧急',
+                'high': '🟠 高',
+                'medium': '🟡 中',
+                'low': '🟢 低'
+            };
+            
+            tooltip.innerHTML = `
+                <div class="event-title">${event.title}</div>
+                <div class="event-priority ${event.priority}">${priorityText[event.priority]}</div>
+                <div class="event-description">${event.description}</div>
+            `;
+            
+            document.body.appendChild(tooltip);
+            
+            // 定位工具提示
+            const rect = e.target.getBoundingClientRect();
+            const tooltipRect = tooltip.getBoundingClientRect();
+            
+            let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+            let top = rect.top - tooltipRect.height - 8;
+            
+            // 边界检查
+            if (left < 10) left = 10;
+            if (left + tooltipRect.width > window.innerWidth - 10) {
+                left = window.innerWidth - tooltipRect.width - 10;
+            }
+            if (top < 10) {
+                top = rect.bottom + 8;
+                // 调整箭头方向
+                tooltip.style.setProperty('--arrow-direction', 'up');
+            }
+            
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
+        }
+
+        // 隐藏工具提示
+        function hideTooltip() {
+            if (tooltip) {
+                tooltip.remove();
+                tooltip = null;
+            }
+        }
+
+        // 显示日期悬停详情
+        function showDateDetails(event, date, events) {
+            const detailsBox = document.getElementById('dateHoverDetails');
+            
+            const dateStr = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+            const dayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+            const dayName = dayNames[date.getDay()];
+            
+            let content = `<div class="date-title">${dateStr} ${dayName}</div>`;
+            
+            if (events.length === 0) {
+                content += '<div class="no-events">暂无重要事件</div>';
+            } else {
+                events.forEach(eventItem => {
+                    const priorityText = {
+                        'urgent': '🔴 紧急',
+                        'high': '🟠 高',
+                        'medium': '🟡 中',
+                        'low': '🟢 低'
+                    };
+                    
+                    content += `
+                        <div class="event-item">
+                            <div class="event-title">${eventItem.title}</div>
+                            <div class="event-priority ${eventItem.priority}">${priorityText[eventItem.priority]}</div>
+                            <div class="event-description">${eventItem.description}</div>
+                        </div>
+                    `;
+                });
+            }
+            
+            detailsBox.innerHTML = content;
+            
+            // 定位详情框
+            const rect = event.currentTarget.getBoundingClientRect();
+            detailsBox.style.left = rect.right + 15 + 'px';
+            detailsBox.style.top = rect.top + 'px';
+            
+            // 确保详情框不超出屏幕边界
+            setTimeout(() => {
+                const detailsRect = detailsBox.getBoundingClientRect();
+                if (detailsRect.right > window.innerWidth) {
+                    detailsBox.style.left = rect.left - detailsRect.width - 15 + 'px';
+                }
+                if (detailsRect.bottom > window.innerHeight) {
+                    detailsBox.style.top = window.innerHeight - detailsRect.height - 20 + 'px';
+                }
+                if (detailsRect.top < 0) {
+                    detailsBox.style.top = '20px';
+                }
+            }, 10);
+            
+            detailsBox.classList.add('show');
+        }
+
+        // 隐藏日期悬停详情
+        function hideDateDetails() {
+            const detailsBox = document.getElementById('dateHoverDetails');
+            detailsBox.classList.remove('show');
+        }
+
+        // 切换月份
+        function changeMonth(direction) {
+            currentDate.setMonth(currentDate.getMonth() + direction);
+            renderCalendar();
+        }
+
+        // 添加一些交互效果
+        document.querySelectorAll('.kpi-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-4px)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+
+        // 新增模块的交互功能
+        function initInteractiveFeatures() {
+            // 为所有带有hover-drill-down类的元素添加悬浮提示
+            document.querySelectorAll('.hover-drill-down').forEach(element => {
+                element.addEventListener('mouseenter', function(e) {
+                    showHoverTooltip(e, this);
+                });
+                
+                element.addEventListener('mouseleave', function() {
+                    hideHoverTooltip();
+                });
+            });
+
+            // 为筛选器添加交互功能
+            document.querySelectorAll('.filter-select').forEach(select => {
+                select.addEventListener('change', function() {
+                    handleFilterChange(this);
+                });
+            });
+
+            // 为状态指示器添加点击事件
+            document.querySelectorAll('.status-indicator').forEach(indicator => {
+                indicator.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    showStatusDetails(this);
+                });
+            });
+        }
+
+        // 显示悬浮提示
+        function showHoverTooltip(event, element) {
+            const tooltip = document.getElementById('tooltip');
+            if (!tooltip) return;
+
+            let content = '';
+            
+            // 根据元素类型生成不同的提示内容
+            if (element.classList.contains('kpi-card')) {
+                const label = element.querySelector('.kpi-label, .account-label')?.textContent || '';
+                const value = element.querySelector('.kpi-value, .account-value')?.textContent || '';
+                const trend = element.querySelector('.kpi-trend, .account-trend')?.textContent || '';
+                content = `<strong>${label}</strong><br>当前值: ${value}<br>趋势: ${trend}<br><em>点击查看详细数据</em>`;
+            } else if (element.classList.contains('progress-item')) {
+                const name = element.querySelector('.progress-name')?.textContent || '';
+                const count = element.querySelector('.progress-count')?.textContent || '';
+                const trend = element.querySelector('.progress-trend')?.textContent || '';
+                content = `<strong>${name}</strong><br>数量: ${count}<br>趋势: ${trend}<br><em>点击查看流程详情</em>`;
+            } else if (element.classList.contains('account-card')) {
+                const label = element.querySelector('.account-label')?.textContent || '';
+                const value = element.querySelector('.account-value')?.textContent || '';
+                const subText = element.querySelector('.account-sub-text')?.textContent || '';
+                content = `<strong>${label}</strong><br>数量: ${value}<br>${subText}<br><em>点击查看账户详情</em>`;
+            }
+
+            tooltip.innerHTML = content;
+            tooltip.style.display = 'block';
+            tooltip.style.left = event.pageX + 10 + 'px';
+            tooltip.style.top = event.pageY + 10 + 'px';
+        }
+
+        // 隐藏悬浮提示
+        function hideHoverTooltip() {
+            const tooltip = document.getElementById('tooltip');
+            if (tooltip) {
+                tooltip.style.display = 'none';
+            }
+        }
+
+        // 处理筛选器变化
+        function handleFilterChange(selectElement) {
+            const filterType = selectElement.className.includes('filter-select') ? 'filter' : 'unknown';
+            const selectedValue = selectElement.value;
+            const selectedText = selectElement.options[selectElement.selectedIndex].text;
+            
+            console.log(`筛选器变化: ${selectedText} (${selectedValue})`);
+            
+            // 模拟筛选效果
+            if (selectedValue) {
+                showFilterNotification(`已应用筛选条件: ${selectedText}`);
+                // 这里可以添加实际的筛选逻辑
+                applyFilter(filterType, selectedValue);
+            }
+        }
+
+        // 显示筛选通知
+        function showFilterNotification(message) {
+            // 创建临时通知元素
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #27ae60;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 6px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 10000;
+                font-size: 14px;
+                opacity: 0;
+                transform: translateX(100%);
+                transition: all 0.3s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            // 显示动画
+            setTimeout(() => {
+                notification.style.opacity = '1';
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+
+            // 自动隐藏
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // 应用筛选
+        function applyFilter(filterType, value) {
+            // 这里可以实现实际的筛选逻辑
+            // 例如：隐藏/显示相关的卡片或数据
+            console.log(`应用筛选: ${filterType} = ${value}`);
+        }
+
+        // 显示状态详情
+        function showStatusDetails(indicator) {
+            const status = indicator.getAttribute('data-status') || '正常';
+            const details = indicator.getAttribute('data-details') || '系统运行正常';
+            
+            alert(`状态: ${status}\n详情: ${details}`);
+        }
+
+        // 增强导航函数
+        function navigateTo(path) {
+            console.log('导航到:', path);
+            
+            // 显示加载提示
+            const loadingMsg = document.createElement('div');
+            loadingMsg.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: rgba(0,0,0,0.8);
+                color: white;
+                padding: 20px 40px;
+                border-radius: 8px;
+                z-index: 10000;
+                font-size: 16px;
+            `;
+            loadingMsg.textContent = '正在跳转...';
+            document.body.appendChild(loadingMsg);
+
+            // 模拟跳转延迟
+            setTimeout(() => {
+                document.body.removeChild(loadingMsg);
+                alert(`模拟跳转到: ${path}\n\n实际应用中，这里会进行页面跳转或打开新窗口。`);
+            }, 1000);
+        }
+
+        // 页面加载完成后初始化所有功能
+        document.addEventListener('DOMContentLoaded', function() {
+            updateRefreshTime();
+            initDistributionChart();
+            initCalendar();
+            initInteractiveFeatures(); // 初始化新的交互功能
+            
+            // 每30秒更新一次时间
+            setInterval(updateRefreshTime, 30000);
+        });
+    </script>
+</body>
+</html>
